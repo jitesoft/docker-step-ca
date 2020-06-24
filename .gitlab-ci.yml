@@ -1,0 +1,93 @@
+include:
+  - https://gitlab.com/jitesoft/gitlab-ci-lib/raw/master/Scan/trivy.yml
+
+stages:
+  - download
+  - build
+  - containerize
+  - scan
+
+download:
+  stage: download
+  image: registry.gitlab.com/jitesoft/dockerfiles/misc:latest
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - VERSION=$(wget -qO- https://github.com/smallstep/certificates/releases | grep -oP '(?<=releases\/tag\/)(.*?)(?=\">)' | awk 'NR==1{print $1}' | head -1)
+    - echo ${VERSION#?} > version.txt
+    - curl -sSL https://github.com/smallstep/certificates/releases/download/${VERSION}/step-certificates_${VERSION#?}.tar.gz -o source.tar.gz
+  artifacts:
+    paths:
+      - source.tar.gz
+      - version.txt
+    expire_in: 1 day
+
+.build:
+  stage: build
+  needs:
+    - download
+  image: registry.gitlab.com/jitesoft/dockerfiles/go:latest
+  script:
+    - apk add --no-cache git make tar
+    - export VERSION=$(cat version.txt)
+    - mkdir src
+    - tar -xzf source.tar.gz -C src/
+    - cd src
+    - make bootstrap
+    - make bin/step-ca
+    - cd ..
+    - mv src/bin/step-ca ./step-ca-${ARCH}
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - version.txt
+      - step-ca-${ARCH}
+
+build:arm64:
+  variables:
+    GIT_STRATEGY: none
+    ARCH: arm64
+  extends: .build
+  tags:
+    - native-aarch64
+
+build:amd64:
+  variables:
+    GIT_STRATEGY: none
+    ARCH: amd64
+  extends: .build
+  tags:
+    - native-amd64
+
+# jitesoft/step-ca
+containerize:
+  needs:
+    - build:amd64
+    - build:arm64
+  stage: containerize
+  image: registry.gitlab.com/jitesoft/dockerfiles/misc:latest
+  script:
+    - mkdir bin
+    - mv step-* bin/
+    - mv entrypoint.sh bin/
+    - VERSION=$(cat version.txt)
+    - TAGLIST=$(helper "${CI_REGISTRY_IMAGE}" "latest,${VERSION}")
+    - docker buildx build --platform linux/arm64,linux/amd64 ${TAGLIST} --build-arg VERSION=$(cat version.txt) --push --progress plain .
+  tags:
+    - protected
+    - buildx
+  artifacts:
+    expire_in: 1 hour
+    paths:
+      - version.txt
+
+scan:
+  tags: [ protected, jitesoft ]
+  stage: scan
+  extends: .container_scanning
+  before_script:
+    - apk add --no-cache wget grep
+    - VERSION=$(wget -qO- https://github.com/smallstep/certificates/releases | grep -oP '(?<=releases\/tag\/)(.*?)(?=\">)' | awk 'NR==1{print $1}' | head -1)
+    - export SCANNING_IMAGE_NAME="${CI_REGISTRY_IMAGE}:${VERSION#?}"
+  variables:
+    GIT_STRATEGY: none

@@ -1,2 +1,2 @@
 #!/usr/bin/env ash
-exec "$@"
+exec /usr/local/bin/step-ca "$@"
