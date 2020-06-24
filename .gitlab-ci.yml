@@ -28,7 +28,7 @@ download:
     - download
   image: registry.gitlab.com/jitesoft/dockerfiles/go:latest
   script:
-    - apk add --no-cache git make tar
+    - apk add --no-cache git make tar file
     - export VERSION=$(cat version.txt)
     - mkdir src
     - tar -xzf source.tar.gz -C src/
@@ -37,6 +37,7 @@ download:
     - make bin/step-ca
     - cd ..
     - mv src/bin/step-ca ./step-ca-${ARCH}
+    - file ./step-ca-${ARCH}
   artifacts:
     expire_in: 1 day
     paths:
