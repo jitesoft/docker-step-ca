@@ -59,7 +59,6 @@ build:amd64:
   tags:
     - native-amd64
 
-# jitesoft/step-ca
 containerize:
   needs:
     - build:amd64
@@ -71,7 +70,7 @@ containerize:
     - mv step-* bin/
     - mv entrypoint.sh bin/
     - VERSION=$(cat version.txt)
-    - TAGLIST=$(helper "${CI_REGISTRY_IMAGE}" "latest,${VERSION}")
+    - TAGLIST=$(helper "jitesoft/step-ca,${CI_REGISTRY_IMAGE}" "latest,${VERSION}")
     - docker buildx build --platform linux/arm64,linux/amd64 ${TAGLIST} --build-arg VERSION=$(cat version.txt) --push --progress plain .
   tags:
     - protected
