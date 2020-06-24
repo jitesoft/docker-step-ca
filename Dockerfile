@@ -12,6 +12,9 @@ LABEL maintainer="Johannes Tegnér <johannes@jitesoft.com>" \
 
 ARG TARGETARCH
 
+ENV CONFIGPATH="/home/step/.step/config/ca.json" \
+    PWDPATH="/home/step/.step/secrets/password"
+
 RUN --mount=type=bind,source=./bin,target=/tmp/bin \
     cp /tmp/bin/entrypoint.sh /usr/local/bin/entrypoint; \
     cp /tmp/bin/step-ca-${TARGETARCH} /usr/local/bin/step-ca \
@@ -25,5 +28,4 @@ USER step
 WORKDIR /home/step
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["entrypoint"]
-VOLUME [ "/home/step/.step" ]
-CMD ["--password-file", "/home/step/.step/secrets/password", "/home/step/.step/secrets/ca.json"]
+CMD ["--password-file", "${PWPATH}", "${CONFIGPATH}"]
