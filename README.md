@@ -7,7 +7,7 @@ This docker image contains [smallsteps](https://smallstep.com/) [Step Certificat
 
 ## Tags
 
-All images are built from source for ARM64 and AMD64.  
+All images are built from source for ARM64, ARMv7 and AMD64.  
 The tags are based on latest version at build time (0.14.5-rc.4 as of writing this document) 
 which makes the tags change more often than this README.    
 `latest` always refers to the latest version.
