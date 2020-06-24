@@ -58,12 +58,14 @@ build:arm64:
   variables:
     GIT_STRATEGY: none
     ARCH: arm64
+    GOARCH: arm64
   extends: .build
 
 build:amd64:
   variables:
     GIT_STRATEGY: none
     ARCH: amd64
+    GOARCH: amd64
   extends: .build
   tags:
     - native-amd64
