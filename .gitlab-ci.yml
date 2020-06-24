@@ -43,6 +43,16 @@ download:
       - version.txt
       - step-ca-${ARCH}
 
+build:armv7:
+  variables:
+    GIT_STRATEGY: none
+    ARCH: arm
+    GOARCH: arm
+    GOARM: 7
+  extends: .build
+  tags:
+    - native-amd64
+
 build:arm64:
   variables:
     GIT_STRATEGY: none
@@ -71,7 +81,7 @@ containerize:
     - mv entrypoint.sh bin/
     - VERSION=$(cat version.txt)
     - TAGLIST=$(helper "jitesoft/step-ca,${CI_REGISTRY_IMAGE}" "latest,${VERSION}")
-    - docker buildx build --platform linux/arm64,linux/amd64 ${TAGLIST} --build-arg VERSION=$(cat version.txt) --push --progress plain .
+    - docker buildx build --platform linux/arm/v7,linux/arm64,linux/amd64 ${TAGLIST} --build-arg VERSION=$(cat version.txt) --push --progress plain .
   tags:
     - protected
     - buildx
