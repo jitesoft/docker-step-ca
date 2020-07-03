@@ -30,4 +30,3 @@ USER step
 WORKDIR /home/step
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["entrypoint"]
-CMD ["--password-file", "${PWDPATH}", "${CONFIGPATH}"]

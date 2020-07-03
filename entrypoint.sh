@@ -12,4 +12,4 @@ if [[ ! -f "${PWDPATH}" ]]; then
   exit 1
 fi
 
-exec /usr/local/bin/step-ca "$@"
+exec /usr/local/bin/step-ca --password-file "${PWDPATH}" "${CONFIGPATH}"
