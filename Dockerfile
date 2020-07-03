@@ -20,6 +20,8 @@ RUN --mount=type=bind,source=./bin,target=/tmp/bin \
     cp /tmp/bin/step-ca-${TARGETARCH} /usr/local/bin/step-ca \
  && addgroup -g 1000 -S step \
  && adduser -u 1000 -D -G step step \
+ && mkdir -p /home/step/.step/secrets \
+ && mkdir -p /home/step/.step/config \
  && chown step:step /home/step \
  && chmod +x /usr/local/bin/step-ca \
  && chmod +x /usr/local/bin/entrypoint
@@ -28,4 +30,4 @@ USER step
 WORKDIR /home/step
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["entrypoint"]
-CMD ["--password-file", "${PWPATH}", "${CONFIGPATH}"]
+CMD ["--password-file", "${PWDPATH}", "${CONFIGPATH}"]
