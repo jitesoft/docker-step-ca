@@ -1,6 +1,6 @@
 #
-# This file contains rules to build the latest version (not latest release).
-# This include unstable versions.
+# This file contains rules to build the latest stable version (i.e., latest release).
+# This does not include unstable versions (beta, rc etc).
 #
 .rules-stable: &rules-stable
   rules:
@@ -54,13 +54,13 @@ containerize:stable:
   <<: *rules-stable
   extends: .containerize
   needs:
-    - build:amd64:latest
-    - build:arm64:latest
-    - build:armv7:latest
+    - build:amd64:stable
+    - build:arm64:stable
+    - build:armv7:stable
   variables:
     TYPE: stable
 
-scan:latest:
+scan:stable:
   <<: *rules-stable
   needs:
     - job: containerize:stable
