@@ -25,7 +25,7 @@
     - apk add --no-cache git make tar file
     - export VERSION=$(cat version.txt)
     - mkdir src
-    - tar -xzf source.tar.gz -C src/
+    - tar -xzf source.tar.gz --strip-components 1 -C src/
     - cd src
     - make bootstrap
     - make bin/step-ca
