@@ -1,104 +1,70 @@
 include:
+  - local: /.gitlab/shared.yml
   - https://gitlab.com/jitesoft/gitlab-ci-lib/raw/master/Scan/trivy.yml
+  - local: /.gitlab/stable.yml
+  - local: /.gitlab/latest.yml
 
 stages:
+  - check
   - download
   - build
   - containerize
   - scan
+  - create-cache
 
-download:
-  stage: download
-  image: registry.gitlab.com/jitesoft/dockerfiles/misc:latest
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - VERSION=$(wget -qO- https://github.com/smallstep/certificates/releases | grep -oP '(?<=releases\/tag\/)(.*?)(?=\">)' | awk 'NR==1{print $1}' | head -1)
-    - echo ${VERSION#?} > version.txt
-    - curl -sSL https://github.com/smallstep/certificates/releases/download/${VERSION}/step-certificates_${VERSION#?}.tar.gz -o source.tar.gz
-  artifacts:
+check-versions:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
+      when: never
+  stage: check
+  cache:
+    key: smallstep-certificates-versions
     paths:
-      - source.tar.gz
-      - version.txt
-    expire_in: 1 day
-
-.build:
-  stage: build
-  needs:
-    - download
-  image: registry.gitlab.com/jitesoft/dockerfiles/go:latest
+      - latest.txt
+      - stable.txt
+    policy: pull
   script:
-    - apk add --no-cache git make tar file
-    - export VERSION=$(cat version.txt)
-    - mkdir src
-    - tar -xzf source.tar.gz -C src/
-    - cd src
-    - make bootstrap
-    - make bin/step-ca
-    - cd ..
-    - mv src/bin/step-ca ./step-ca-${ARCH}
-    - file ./step-ca-${ARCH}
-  artifacts:
-    expire_in: 1 day
-    paths:
-      - version.txt
-      - step-ca-${ARCH}
+    - apk add --no-cache jq wget curl
+    - STABLE=$(wget -qO- https://api.github.com/repos/smallstep/certificates/releases | jq -r ".[0].tag_name")
+    - LATEST=$(wget -qO- https://api.github.com/repos/smallstep/certificates/tags | jq -r ".[0].name")
+    - touch stable.txt
+    - touch latest.txt
+    - echo "Checking if latest (${LATEST} | $(cat latest.txt)) version should be built."
+    - |
+      if [ "$(cat latest.txt)" != "${LATEST}" ]; then
+        echo "Latest should be built."
+        curl -F token=${CI_JOB_TOKEN} -F ref=master  -F "variables[VERSION]=${LATEST}" -F "variables[BUILD]=latest"  https://gitlab.com/api/v4/projects/19567470/trigger/pipeline
+      fi
+    - echo "Checking if the stable (${STABLE} | $(cat stable.txt)) version should be built."
+    - |
+      if [ "$(cat stable.txt)" != "${STABLE}" ]; then
+        echo "Stable should be built."
+        curl -F token=${CI_JOB_TOKEN} -F "variables[VERSION]=${STABLE}" -F "variables[BUILD]=stable" -F ref=master https://gitlab.com/api/v4/projects/19567470/trigger/pipeline
+      fi
+    - echo "This job is done!"
 
-build:armv7:
+create-cache:
   variables:
     GIT_STRATEGY: none
-    ARCH: arm
-    GOARCH: arm
-    GOARM: 7
-  extends: .build
-  tags:
-    - native-amd64
-
-build:arm64:
-  variables:
-    GIT_STRATEGY: none
-    ARCH: arm64
-    GOARCH: arm64
-  extends: .build
-
-build:amd64:
-  variables:
-    GIT_STRATEGY: none
-    ARCH: amd64
-    GOARCH: amd64
-  extends: .build
-  tags:
-    - native-amd64
-
-containerize:
-  needs:
-    - build:amd64
-    - build:arm64
-    - build:armv7
-  stage: containerize
-  image: registry.gitlab.com/jitesoft/dockerfiles/misc:latest
+  stage: create-cache
+  image: registry.gitlab.com/jitesoft/dockerfiles/alpine:latest
+  rules:
+    - if: '$CACHE_CREATE'
+      when: always
+    - when: never
   script:
-    - mkdir bin
-    - mv step-* bin/
-    - mv entrypoint.sh bin/
-    - VERSION=$(cat version.txt)
-    - TAGLIST=$(helper "jitesoft/step-ca,${CI_REGISTRY_IMAGE}" "latest,${VERSION}")
-    - docker buildx build --platform linux/arm/v7,linux/arm64,linux/amd64 ${TAGLIST} --build-arg VERSION=$(cat version.txt) --push --progress plain .
-  tags:
-    - protected
-    - buildx
-  artifacts:
-    expire_in: 1 hour
+    - touch stable.txt
+    - touch latest.txt
+    - echo "${VERSION}" > ${TYPE}.txt
+  cache:
     paths:
-      - version.txt
-
-scan:
-  tags: [ protected, jitesoft ]
-  stage: scan
-  extends: .container_scanning
-  before_script:
-    - apk add --no-cache wget grep
-    - VERSION=$(wget -qO- https://github.com/smallstep/certificates/releases | grep -oP '(?<=releases\/tag\/)(.*?)(?=\">)' | awk 'NR==1{print $1}' | head -1)
-    - export SCANNING_IMAGE_NAME="${CI_REGISTRY_IMAGE}:${VERSION#?}"
-  variables:
-    GIT_STRATEGY: none
+      - latest.txt
+      - stable.txt
+    key: smallstep-certificates-versions
+    policy: pull-push

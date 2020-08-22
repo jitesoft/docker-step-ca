@@ -1,0 +1,74 @@
+#
+# This file contains rules to build the latest version (not latest release).
+# This include unstable versions.
+#
+.rules-stable: &rules-stable
+  rules:
+    - if: '$BUILD == "stable"'
+      when: always
+    - when: never
+
+download:stable:
+  <<: *rules-stable
+  extends: .download
+
+build:armv7:stable:
+  <<: *rules-stable
+  needs:
+    - download:stable
+  variables:
+    TYPE: stable
+    GIT_STRATEGY: none
+    ARCH: arm
+    GOARCH: arm
+    GOARM: 7
+  extends: .build
+  tags:
+    - native-amd64
+
+build:arm64:stable:
+  <<: *rules-stable
+  needs:
+    - download:stable
+  variables:
+    TYPE: stable
+    GIT_STRATEGY: none
+    ARCH: arm64
+    GOARCH: arm64
+  extends: .build
+
+build:amd64:stable:
+  <<: *rules-stable
+  needs:
+    - download:stable
+  variables:
+    TYPE: stable
+    GIT_STRATEGY: none
+    ARCH: amd64
+    GOARCH: amd64
+  extends: .build
+  tags:
+    - native-amd64
+
+containerize:stable:
+  <<: *rules-stable
+  extends: .containerize
+  needs:
+    - build:amd64:latest
+    - build:arm64:latest
+    - build:armv7:latest
+  variables:
+    TYPE: stable
+
+scan:latest:
+  <<: *rules-stable
+  needs:
+    - job: containerize:stable
+      artifacts: false
+  extends: .container_scanning
+  before_script:
+    - export VERSION=$(cat version.txt)
+    - export SCANNING_IMAGE_NAME="${CI_REGISTRY_IMAGE}:${VERSION}"
+  variables:
+    GIT_STRATEGY: none
+
