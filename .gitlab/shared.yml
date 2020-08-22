@@ -8,8 +8,8 @@
     GIT_STRATEGY: none
   script:
     - echo $VERSION > version.txt
-    - echo "Downloading smallstep cli - ${VERSION} / ${VERSION#?}"
-    - curl -sSL https://github.com/smallstep/cli/archive/${VERSION}.tar.gz -o source.tar.gz
+    - echo "Downloading smallstep certificates - ${VERSION} / ${VERSION#?}"
+    - curl -sSL https://github.com/smallstep/certificates/archive/${VERSION}.tar.gz -o source.tar.gz
   artifacts:
     paths:
       - source.tar.gz
