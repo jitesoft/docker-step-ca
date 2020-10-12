@@ -12,17 +12,12 @@ The tags are based on latest version at build time (0.14.5-rc.4 as of writing th
 which makes the tags change more often than this README.    
 `latest` always refers to the latest version.
 
+Images can be found at:
 
-### Docker Hub
+* [Docker hub](https://hub.docker.com/r/jitesoft/step-ca): `jitesoft/step-ca`  
+* [GitLab](https://gitlab.com/jitesoft/dockerfiles/step-ca): `registry.gitlab.com/jitesoft/dockerfiles/step-ca`
+* [GitHub](https://github.com/orgs/jitesoft/packages/container/package/step-ca): `ghcr.io/jitesoft/step-ca`
 
-* `jitesoft/step-ca`
-    * `latest`, `x.x.x`
-
-### Gitlab
-
-* `registry.gitlab.com/jitesoft/dockerfiles/step-ca`
-  * `latest`, `x.x.x`
-  
 ## Dockerfile
 
 Dockerfile can be found at [GitLab](https://gitlab.com/jitesoft/dockerfiles/step-ca) or [GitHub](https://github.com/jitesoft/docker-step-ca).

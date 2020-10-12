@@ -46,7 +46,7 @@
     - mv step-* bin/
     - mv entrypoint.sh bin/
     - VERSION=$(cat version.txt)
-    - TAGLIST=$(helper "jitesoft/step-ca,${CI_REGISTRY_IMAGE}" "latest,${VERSION},${TYPE}")
+    - TAGLIST=$(helper "jitesoft/step-ca,${CI_REGISTRY_IMAGE},ghcr.io/jitesoft/step-ca" "latest,${VERSION},${TYPE}")
     - docker buildx build --platform linux/arm/v7,linux/arm64,linux/amd64 ${TAGLIST} --build-arg VERSION=$(cat version.txt) --push --progress plain .
     - curl -F token=${CI_JOB_TOKEN} -F "variables[VERSION]=${VERSION}" -F "variables[TYPE]=${TYPE}" -F "variables[CACHE_CREATE]=true" -F ref=master https://gitlab.com/api/v4/projects/19567470/trigger/pipeline
   tags:
